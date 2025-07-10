@@ -1,0 +1,489 @@
+import React, { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import { TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3, User, Settings, LogOut, Search, Plus, Minus } from 'lucide-react';
+
+const FinancialPortfolioDashboard = () => {
+  // Sample data - in real app, this would come from backend API
+  const [portfolioData, setPortfolioData] = useState([
+    { month: 'Jan', value: 45000, growth: 5.2 },
+    { month: 'Feb', value: 47340, growth: 5.2 },
+    { month: 'Mar', value: 49120, growth: 3.8 },
+    { month: 'Apr', value: 51800, growth: 5.5 },
+    { month: 'May', value: 54200, growth: 4.6 },
+    { month: 'Jun', value: 56890, growth: 5.0 }
+  ]);
+
+  const [holdings, setHoldings] = useState([
+    { symbol: 'RELIANCE', name: 'Reliance Industries', quantity: 50, currentPrice: 2850, invested: 140000, currentValue: 142500, change: 1.8 },
+    { symbol: 'TCS', name: 'Tata Consultancy Services', quantity: 30, currentPrice: 3920, invested: 115000, currentValue: 117600, change: 2.3 },
+    { symbol: 'HDFC', name: 'HDFC Bank', quantity: 80, currentPrice: 1650, invested: 128000, currentValue: 132000, change: 3.1 },
+    { symbol: 'INFY', name: 'Infosys', quantity: 40, currentPrice: 1780, invested: 70000, currentValue: 71200, change: 1.7 }
+  ]);
+
+  const [watchlist, setWatchlist] = useState([
+    { symbol: 'ADANIPORTS', price: 820, change: -2.1 },
+    { symbol: 'ASIANPAINT', price: 3250, change: 1.5 },
+    { symbol: 'BAJFINANCE', price: 7800, change: 3.2 },
+    { symbol: 'BHARTIARTL', price: 1050, change: -0.8 }
+  ]);
+
+  const [totalPortfolioValue, setTotalPortfolioValue] = useState(0);
+  const [totalInvested, setTotalInvested] = useState(0);
+  const [totalGains, setTotalGains] = useState(0);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [newStock, setNewStock] = useState({ symbol: '', quantity: '', price: '' });
+
+  // Calculate portfolio metrics
+  useEffect(() => {
+    const invested = holdings.reduce((sum, holding) => sum + holding.invested, 0);
+    const current = holdings.reduce((sum, holding) => sum + holding.currentValue, 0);
+    const gains = current - invested;
+    
+    setTotalInvested(invested);
+    setTotalPortfolioValue(current);
+    setTotalGains(gains);
+  }, [holdings]);
+
+  // Pie chart data for asset allocation
+  const pieData = holdings.map(stock => ({
+    name: stock.symbol,
+    value: stock.currentValue,
+    color: `hsl(${Math.random() * 360}, 70%, 50%)`
+  }));
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+  const addToWatchlist = (symbol) => {
+    if (symbol && !watchlist.find(item => item.symbol === symbol)) {
+      const mockPrice = Math.floor(Math.random() * 5000) + 100;
+      const mockChange = (Math.random() - 0.5) * 10;
+      setWatchlist([...watchlist, { symbol: symbol.toUpperCase(), price: mockPrice, change: mockChange }]);
+    }
+  };
+
+  const addHolding = () => {
+    if (newStock.symbol && newStock.quantity && newStock.price) {
+      const quantity = parseInt(newStock.quantity);
+      const price = parseFloat(newStock.price);
+      const invested = quantity * price;
+      const currentValue = invested * (1 + (Math.random() - 0.5) * 0.1); // Mock current value
+      
+      setHoldings([...holdings, {
+        symbol: newStock.symbol.toUpperCase(),
+        name: newStock.symbol + ' Company',
+        quantity,
+        currentPrice: price * (1 + (Math.random() - 0.5) * 0.1),
+        invested,
+        currentValue,
+        change: (Math.random() - 0.5) * 10
+      }]);
+      
+      setNewStock({ symbol: '', quantity: '', price: '' });
+    }
+  };
+
+  const removeFromWatchlist = (symbol) => {
+    setWatchlist(watchlist.filter(item => item.symbol !== symbol));
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  const StatCard = ({ title, value, change, icon: Icon, color }) => (
+    <div className="bg-white rounded-xl shadow-lg p-6 border-l-4" style={{ borderLeftColor: color }}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-gray-600 text-sm font-medium">{title}</p>
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          {change !== undefined && (
+            <div className={`flex items-center mt-2 ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {change >= 0 ? <TrendingUp className="w-4 h-4 mr-1" /> : <TrendingDown className="w-4 h-4 mr-1" />}
+              <span className="text-sm font-medium">{Math.abs(change).toFixed(2)}%</span>
+            </div>
+          )}
+        </div>
+        <Icon className="w-8 h-8" style={{ color }} />
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-blue-600">WealthTracker Pro</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search stocks..."
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      addToWatchlist(e.target.value);
+                      e.target.value = '';
+                    }
+                  }}
+                />
+              </div>
+              <button className="p-2 text-gray-400 hover:text-gray-600">
+                <Settings className="w-5 h-5" />
+              </button>
+              <button className="p-2 text-gray-400 hover:text-gray-600">
+                <User className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8">
+            {['dashboard', 'portfolio', 'watchlist', 'analytics'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`py-4 px-1 border-b-2 font-medium text-sm capitalize ${
+                  activeTab === tab
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'dashboard' && (
+          <div className="space-y-8">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard
+                title="Total Portfolio Value"
+                value={formatCurrency(totalPortfolioValue)}
+                change={((totalGains / totalInvested) * 100)}
+                icon={DollarSign}
+                color="#10B981"
+              />
+              <StatCard
+                title="Total Invested"
+                value={formatCurrency(totalInvested)}
+                icon={PieChart}
+                color="#3B82F6"
+              />
+              <StatCard
+                title="Total Gains/Loss"
+                value={formatCurrency(totalGains)}
+                change={((totalGains / totalInvested) * 100)}
+                icon={TrendingUp}
+                color={totalGains >= 0 ? "#10B981" : "#EF4444"}
+              />
+              <StatCard
+                title="Holdings"
+                value={holdings.length.toString()}
+                icon={BarChart3}
+                color="#8B5CF6"
+              />
+            </div>
+
+            {/* Portfolio Performance Chart */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Portfolio Performance</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={portfolioData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => [formatCurrency(value), 'Portfolio Value']} />
+                  <Line type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={3} dot={{ fill: '#3B82F6' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input
+                  type="text"
+                  placeholder="Stock Symbol"
+                  value={newStock.symbol}
+                  onChange={(e) => setNewStock({...newStock, symbol: e.target.value})}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="number"
+                  placeholder="Quantity"
+                  value={newStock.quantity}
+                  onChange={(e) => setNewStock({...newStock, quantity: e.target.value})}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <div className="flex space-x-2">
+                  <input
+                    type="number"
+                    placeholder="Price"
+                    value={newStock.price}
+                    onChange={(e) => setNewStock({...newStock, price: e.target.value})}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    onClick={addHolding}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'portfolio' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Holdings</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Price</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invested</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Value</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P&L</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {holdings.map((stock, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{stock.symbol}</div>
+                            <div className="text-sm text-gray-500">{stock.name}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{stock.quantity}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(stock.currentPrice)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(stock.invested)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(stock.currentValue)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className={`flex items-center ${stock.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {stock.change >= 0 ? <TrendingUp className="w-4 h-4 mr-1" /> : <TrendingDown className="w-4 h-4 mr-1" />}
+                            <span className="text-sm font-medium">{stock.change.toFixed(2)}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'watchlist' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Watchlist</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {watchlist.map((stock, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{stock.symbol}</h4>
+                        <p className="text-lg font-bold text-gray-900">{formatCurrency(stock.price)}</p>
+                        <div className={`flex items-center mt-1 ${stock.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {stock.change >= 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+                          <span className="text-sm">{stock.change.toFixed(2)}%</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removeFromWatchlist(stock.symbol)}
+                        className="text-gray-400 hover:text-red-600"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Asset Allocation Pie Chart */}
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Asset Allocation</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Performance Comparison */}
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Stock Performance</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={holdings}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="symbol" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="change" fill="#3B82F6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Market Insights */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Market Insights</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-semibold text-blue-900">Best Performer</h4>
+                  <p className="text-lg font-bold text-blue-600">
+                    {holdings.reduce((best, stock) => stock.change > best.change ? stock : best, holdings[0])?.symbol}
+                  </p>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <h4 className="font-semibold text-green-900">Total Return</h4>
+                  <p className="text-lg font-bold text-green-600">
+                    {((totalGains / totalInvested) * 100).toFixed(2)}%
+                  </p>
+                </div>
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <h4 className="font-semibold text-purple-900">Diversification</h4>
+                  <p className="text-lg font-bold text-purple-600">{holdings.length} Stocks</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* Company Info */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-blue-400">WealthTracker Pro</h3>
+              <p className="text-gray-300 text-sm">
+                Your comprehensive investment research and portfolio management platform. 
+                Make informed decisions with real-time analytics and insights.
+              </p>
+              <div className="flex space-x-4">
+                <button className="text-gray-400 hover:text-white transition-colors">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+                  </svg>
+                </button>
+                <button className="text-gray-400 hover:text-white transition-colors">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  </svg>
+                </button>
+                <button className="text-gray-400 hover:text-white transition-colors">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.174-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.347-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.402.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.357-.629-2.744-1.378l-.628 2.43c-.226.869-.835 1.958-1.244 2.621.937.29 1.931.446 2.962.446 6.624 0 11.99-5.367 11.99-11.987C24.007 5.367 18.641.001 12.017.001z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Quick Links</h3>
+              <ul className="space-y-2 text-sm text-gray-300">
+                <li><a href="#" className="hover:text-white transition-colors">Dashboard</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Portfolio</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Market Analysis</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Research Reports</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Trading Tools</a></li>
+              </ul>
+            </div>
+
+            {/* Features */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Features</h3>
+              <ul className="space-y-2 text-sm text-gray-300">
+                <li><a href="#" className="hover:text-white transition-colors">Real-time Data</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Advanced Charts</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Risk Analysis</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Performance Tracking</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Mobile App</a></li>
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Support</h3>
+              <ul className="space-y-2 text-sm text-gray-300">
+                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">API Documentation</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Community Forum</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">System Status</a></li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <div className="flex items-center space-x-6 text-sm text-gray-400">
+              <p>&copy; 2025 WealthTracker Pro. All rights reserved.</p>
+              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
+            </div>
+            <div className="mt-4 md:mt-0 flex items-center space-x-4 text-sm text-gray-400">
+              <span>Built with React & Node.js</span>
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span>System Online</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default FinancialPortfolioDashboard;
